@@ -1,0 +1,143 @@
+-- |
+-- Most of the code is borrowed from the following mailing list discussion:
+-- http://haskell.1045720.n5.nabble.com/darcs-patch-GenT-monad-transformer-variant-of-Gen-QuickCheck-2-td3172136.html
+-- Therefor, credits go to Paul Johnson and Felix Martini.
+module QuickCheck.GenT where
+
+import QuickCheck.GenT.Prelude
+import qualified Test.QuickCheck.Gen as QC
+import qualified System.Random as Random
+
+
+newtype GenT m a = GenT { unGenT :: Random.StdGen -> Int -> m a }
+
+instance (Functor m) => Functor (GenT m) where
+  fmap f m = GenT $ \r n -> fmap f $ unGenT m r n
+
+instance (Monad m) => Monad (GenT m) where
+  return a = GenT (\_ _ -> return a)
+  m >>= k = GenT $ \r n -> do
+    let (r1, r2) = Random.split r
+    a <- unGenT m r1 n
+    unGenT (k a) r2 n
+  fail msg = GenT (\_ _ -> fail msg)
+
+instance (Functor m, Monad m) => Applicative (GenT m) where
+  pure = return
+  (<*>) = ap
+
+instance MonadTrans GenT where
+  lift m = GenT (\_ _ -> m)
+
+instance (MonadIO m) => MonadIO (GenT m) where
+  liftIO = lift . liftIO
+
+runGenT :: GenT m a -> QC.Gen (m a)
+runGenT (GenT run) = QC.MkGen run
+
+class (Applicative g, Monad g) => MonadGen g where 
+  liftGen :: QC.Gen a -> g a 
+  variant :: Integral n => n -> g a -> g a 
+  sized :: (Int -> g a) -> g a 
+  resize :: Int -> g a -> g a 
+  choose :: Random.Random a => (a, a) -> g a 
+
+instance (Applicative m, Monad m) => MonadGen (GenT m) where
+  liftGen gen = GenT $ \r n -> return $ QC.unGen gen r n
+  choose rng = GenT $ \r _ -> return $ fst $ Random.randomR rng r
+  variant k (GenT g) = GenT $ \r n -> g (var k r) n 
+  sized f = GenT $ \r n -> let GenT g = f n in g r n 
+  resize n (GenT g) = GenT $ \r _ -> g r n
+
+instance MonadGen QC.Gen where 
+  liftGen = id 
+  variant k (QC.MkGen g) = QC.MkGen $ \r n -> g (var k r) n 
+  sized f = QC.MkGen $ \r n -> let QC.MkGen g = f n in g r n 
+  resize n (QC.MkGen g) = QC.MkGen $ \r _ -> g r n 
+  choose range = QC.MkGen $ \r _ -> fst $ Random.randomR range r 
+
+-- |
+-- Private variant-generating function.  Converts an integer into a chain 
+-- of (fst . split) and (snd . split) applications.  Every integer (including 
+-- negative ones) will give rise to a different random number generator in 
+-- log2 n steps. 
+var :: Integral n => n -> Random.StdGen -> Random.StdGen 
+var k = 
+  (if k == k' then id else var k') . (if even k then fst else snd) . Random.split 
+  where k' = k `div` 2 
+ 
+
+--------------------------------------------------------------------------
+-- ** Common generator combinators
+
+-- | Generates a value that satisfies a predicate.
+suchThat :: MonadGen m => m a -> (a -> Bool) -> m a
+gen `suchThat` p =
+  do mx <- gen `suchThatMaybe` p
+     case mx of
+       Just x  -> return x
+       Nothing -> sized (\n -> resize (n+1) (gen `suchThat` p))
+
+-- | Tries to generate a value that satisfies a predicate.
+suchThatMaybe :: MonadGen m => m a -> (a -> Bool) -> m (Maybe a)
+gen `suchThatMaybe` p = sized (try 0 . max 1)
+ where
+  try _ 0 = return Nothing
+  try k n = do x <- resize (2*k+n) gen
+               if p x then return (Just x) else try (k+1) (n-1)
+
+-- | Randomly uses one of the given generators. The input list
+-- must be non-empty.
+oneof :: MonadGen m => [m a] -> m a
+oneof [] = error "QuickCheck.oneof used with empty list"
+oneof gs = choose (0,length gs - 1) >>= (gs !!)
+
+-- | Chooses one of the given generators, with a weighted random distribution.
+-- The input list must be non-empty.
+frequency :: MonadGen m => [(Int, m a)] -> m a
+frequency [] = error "QuickCheck.frequency used with empty list"
+frequency xs0 = choose (1, tot) >>= (`pick` xs0)
+ where
+  tot = sum (map fst xs0)
+
+  pick n ((k,x):xs)
+    | n <= k    = x
+    | otherwise = pick (n-k) xs
+  pick _ _  = error "QuickCheck.pick used with empty list"
+
+-- | Generates one of the given values. The input list must be non-empty.
+elements :: MonadGen m => [a] -> m a
+elements [] = error "QuickCheck.elements used with empty list"
+elements xs = (xs !!) `fmap` choose (0, length xs - 1)
+
+-- | Takes a list of elements of increasing size, and chooses
+-- among an initial segment of the list. The size of this initial
+-- segment increases with the size parameter.
+-- The input list must be non-empty.
+growingElements :: MonadGen m => [a] -> m a
+growingElements [] = error "QuickCheck.growingElements used with empty list"
+growingElements xs = sized $ \n -> elements (take (1 `max` size n) xs)
+  where
+   k      = length xs
+   mx     = 100
+   log'   = round . log . fromIntegral
+   size n = (log' n + 1) * k `div` log' mx
+
+-- | Generates a list of random length. The maximum length depends on the
+-- size parameter.
+listOf :: MonadGen m => m a -> m [a]
+listOf gen = sized $ \n ->
+  do k <- choose (0,n)
+     vectorOf k gen
+
+-- | Generates a non-empty list of random length. The maximum length
+-- depends on the size parameter.
+listOf1 :: MonadGen m => m a -> m [a]
+listOf1 gen = sized $ \n ->
+  do k <- choose (1,1 `max` n)
+     vectorOf k gen
+
+-- | Generates a list of the given length.
+vectorOf :: MonadGen m => Int -> m a -> m [a]
+vectorOf k gen = sequence [ gen | _ <- [1..k] ]
+
