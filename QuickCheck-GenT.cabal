@@ -1,7 +1,7 @@
 name:
   QuickCheck-GenT
 version:
-  0.1.0
+  0.1.1
 synopsis:
   A GenT monad transformer for QuickCheck library.
 description:
@@ -20,7 +20,7 @@ maintainer:
 copyright:
   (c) 2013, Nikita Volkov
 category:
-  Database
+  Testing
 build-type:
   Simple
 cabal-version:
