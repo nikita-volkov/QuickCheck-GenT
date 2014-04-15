@@ -1,6 +1,6 @@
 -- |
--- Most of the code is borrowed from the following mailing list discussion:
--- http://haskell.1045720.n5.nabble.com/darcs-patch-GenT-monad-transformer-variant-of-Gen-QuickCheck-2-td3172136.html
+-- Most of the code is borrowed from 
+-- <http://haskell.1045720.n5.nabble.com/darcs-patch-GenT-monad-transformer-variant-of-Gen-QuickCheck-2-td3172136.html a mailing list discussion>.
 -- Therefor, credits go to Paul Johnson and Felix Martini.
 module QuickCheck.GenT where
 
@@ -86,43 +86,6 @@ gen `suchThatMaybe` p = sized (try 0 . max 1)
   try k n = do x <- resize (2*k+n) gen
                if p x then return (Just x) else try (k+1) (n-1)
 
--- | Randomly uses one of the given generators. The input list
--- must be non-empty.
-oneof :: MonadGen m => [m a] -> m a
-oneof [] = error "QuickCheck.oneof used with empty list"
-oneof gs = choose (0,length gs - 1) >>= (gs !!)
-
--- | Chooses one of the given generators, with a weighted random distribution.
--- The input list must be non-empty.
-frequency :: MonadGen m => [(Int, m a)] -> m a
-frequency [] = error "QuickCheck.frequency used with empty list"
-frequency xs0 = choose (1, tot) >>= (`pick` xs0)
- where
-  tot = sum (map fst xs0)
-
-  pick n ((k,x):xs)
-    | n <= k    = x
-    | otherwise = pick (n-k) xs
-  pick _ _  = error "QuickCheck.pick used with empty list"
-
--- | Generates one of the given values. The input list must be non-empty.
-elements :: MonadGen m => [a] -> m a
-elements [] = error "QuickCheck.elements used with empty list"
-elements xs = (xs !!) `fmap` choose (0, length xs - 1)
-
--- | Takes a list of elements of increasing size, and chooses
--- among an initial segment of the list. The size of this initial
--- segment increases with the size parameter.
--- The input list must be non-empty.
-growingElements :: MonadGen m => [a] -> m a
-growingElements [] = error "QuickCheck.growingElements used with empty list"
-growingElements xs = sized $ \n -> elements (take (1 `max` size n) xs)
-  where
-   k      = length xs
-   mx     = 100
-   log'   = round . log . fromIntegral
-   size n = (log' n + 1) * k `div` log' mx
-
 -- | Generates a list of random length. The maximum length depends on the
 -- size parameter.
 listOf :: MonadGen m => m a -> m [a]
@@ -141,3 +104,71 @@ listOf1 gen = sized $ \n ->
 vectorOf :: MonadGen m => Int -> m a -> m [a]
 vectorOf k gen = sequence [ gen | _ <- [1..k] ]
 
+
+-- * Partial functions
+-------------------------
+
+-- | Randomly uses one of the given generators. The input list
+-- must be non-empty.
+oneof :: MonadGen m => [m a] -> m a
+oneof = 
+  fmap (fromMaybe (error "QuickCheck.GenT.oneof used with empty list")) .
+  oneofMay
+
+-- | Chooses one of the given generators, with a weighted random distribution.
+-- The input list must be non-empty.
+frequency :: MonadGen m => [(Int, m a)] -> m a
+frequency [] = error "QuickCheck.GenT.frequency used with empty list"
+frequency xs0 = choose (1, tot) >>= (`pick` xs0)
+ where
+  tot = sum (map fst xs0)
+
+  pick n ((k,x):xs)
+    | n <= k    = x
+    | otherwise = pick (n-k) xs
+  pick _ _  = error "QuickCheck.GenT.pick used with empty list"
+
+-- | Generates one of the given values. The input list must be non-empty.
+elements :: MonadGen m => [a] -> m a
+elements = 
+  fmap (fromMaybe (error "QuickCheck.GenT.elements used with empty list")) . 
+  elementsMay
+
+-- | Takes a list of elements of increasing size, and chooses
+-- among an initial segment of the list. The size of this initial
+-- segment increases with the size parameter.
+-- The input list must be non-empty.
+growingElements :: MonadGen m => [a] -> m a
+growingElements =
+  fmap (fromMaybe (error "QuickCheck.GenT.growingElements used with empty list")) .
+  growingElementsMay
+
+
+-- * Non-partial functions resulting in Maybe
+-------------------------
+
+-- | 
+-- Randomly uses one of the given generators.
+oneofMay :: MonadGen m => [m a] -> m (Maybe a)
+oneofMay = \case
+  [] -> return Nothing
+  l -> fmap Just $ choose (0, length l - 1) >>= (l !!)
+
+-- | Generates one of the given values. 
+elementsMay :: MonadGen m => [a] -> m (Maybe a)
+elementsMay = \case
+  [] -> return Nothing
+  l -> Just . (l !!) <$> choose (0, length l - 1)
+
+-- | Takes a list of elements of increasing size, and chooses
+-- among an initial segment of the list. The size of this initial
+-- segment increases with the size parameter.
+growingElementsMay :: MonadGen m => [a] -> m (Maybe a)
+growingElementsMay = \case
+  [] -> return Nothing
+  xs -> fmap Just $ sized $ \n -> elements (take (1 `max` size n) xs)
+    where
+      k = length xs
+      mx = 100
+      log' = round . log . fromIntegral
+      size n = (log' n + 1) * k `div` log' mx
