@@ -38,7 +38,7 @@ import Unsafe.Coerce as Exports
 import GHC.Exts as Exports (groupWith, sortWith)
 import GHC.Generics as Exports (Generic)
 import GHC.IO.Exception as Exports
-import Debug.Trace as Exports
+import Debug.Trace as Exports hiding (traceM)
 import Data.IORef as Exports
 import Data.STRef as Exports
 import Control.Monad.ST as Exports
