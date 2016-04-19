@@ -6,10 +6,11 @@ module QuickCheck.GenT where
 
 import QuickCheck.GenT.Prelude
 import qualified Test.QuickCheck.Gen as QC
+import qualified Test.QuickCheck.Random as QC
 import qualified System.Random as Random
 
 
-newtype GenT m a = GenT { unGenT :: Random.StdGen -> Int -> m a }
+newtype GenT m a = GenT { unGenT :: QC.QCGen -> Int -> m a }
 
 instance (Functor m) => Functor (GenT m) where
   fmap f m = GenT $ \r n -> fmap f $ unGenT m r n
@@ -61,7 +62,7 @@ instance MonadGen QC.Gen where
 -- of (fst . split) and (snd . split) applications.  Every integer (including 
 -- negative ones) will give rise to a different random number generator in 
 -- log2 n steps. 
-var :: Integral n => n -> Random.StdGen -> Random.StdGen 
+var :: Integral n => n -> QC.QCGen -> QC.QCGen
 var k = 
   (if k == k' then id else var k') . (if even k then fst else snd) . Random.split 
   where k' = k `div` 2 
