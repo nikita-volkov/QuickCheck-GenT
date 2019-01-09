@@ -1,7 +1,7 @@
 name:
   QuickCheck-GenT
 version:
-  0.2.0
+  0.2.0.1
 synopsis:
   A GenT monad transformer for QuickCheck library.
 description:
