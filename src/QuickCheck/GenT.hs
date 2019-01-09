@@ -151,13 +151,15 @@ growingElements =
 -- | 
 -- Randomly uses one of the given generators.
 oneofMay :: MonadGen m => [m a] -> m (Maybe a)
-oneofMay = \case
+oneofMay as =
+ case as of
   [] -> return Nothing
   l -> fmap Just $ choose (0, length l - 1) >>= (l !!)
 
 -- | Generates one of the given values. 
 elementsMay :: MonadGen m => [a] -> m (Maybe a)
-elementsMay = \case
+elementsMay as =
+ case as of
   [] -> return Nothing
   l -> Just . (l !!) <$> choose (0, length l - 1)
 
@@ -165,7 +167,8 @@ elementsMay = \case
 -- among an initial segment of the list. The size of this initial
 -- segment increases with the size parameter.
 growingElementsMay :: MonadGen m => [a] -> m (Maybe a)
-growingElementsMay = \case
+growingElementsMay as =
+ case as of
   [] -> return Nothing
   xs -> fmap Just $ sized $ \n -> elements (take (1 `max` size n) xs)
     where
