@@ -145,7 +145,7 @@ growingElements =
   growingElementsMay
 
 
--- * Non-partial functions resulting in Maybe
+-- * Total functions resulting in Maybe
 -------------------------
 
 -- | 
