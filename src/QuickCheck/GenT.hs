@@ -1,3 +1,5 @@
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE LambdaCase #-}
 -- |
 -- Most of the code is borrowed from 
 -- <http://haskell.1045720.n5.nabble.com/darcs-patch-GenT-monad-transformer-variant-of-Gen-QuickCheck-2-td3172136.html a mailing list discussion>.
@@ -21,6 +23,10 @@ instance (Monad m) => Monad (GenT m) where
     let (r1, r2) = Random.split r
     a <- unGenT m r1 n
     unGenT (k a) r2 n
+
+#if MIN_VERSION_base(4,13,0)
+instance (MonadFail m) => MonadFail (GenT m) where
+#endif
   fail msg = GenT (\_ _ -> fail msg)
 
 instance (Functor m, Monad m) => Applicative (GenT m) where
