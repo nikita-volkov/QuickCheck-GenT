@@ -49,7 +49,6 @@ library
   default-extensions:
     Arrows
     DeriveGeneric
-    ImpredicativeTypes
     BangPatterns
     PatternGuards
     GADTs
