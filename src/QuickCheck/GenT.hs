@@ -14,23 +14,23 @@ module QuickCheck.GenT
   , frequency
   , elements
   , growingElements
-  -- TODO: getSize
-  -- TODO: scale
+  , getSize
+  , scale
   , suchThat
-  -- TODO: suchThatMap
+  , suchThatMap
   , suchThatMaybe
-  -- TODO: applyArbitrary2
-  -- TODO: applyArbitrary3
-  -- TODO: applyArbitrary4
+  , applyArbitrary2
+  , applyArbitrary3
+  , applyArbitrary4
   , listOf
   , listOf1
   , vectorOf
-  -- TODO: vector
-  -- TODO: infiniteListOf
-  -- TODO: infiniteList
-  -- TODO: shuffle
-  -- TODO: sublistOf
-  -- TODO: orderedList
+  , vector
+  , infiniteListOf
+  , infiniteList
+  , shuffle
+  , sublistOf
+  , orderedList
   -- * Re-exports
   , QC.Gen
   -- * Safe functions
@@ -41,6 +41,7 @@ module QuickCheck.GenT
 
 import QuickCheck.GenT.Prelude
 import Test.QuickCheck (Arbitrary)
+import qualified Test.QuickCheck.Arbitrary as QC
 import qualified Test.QuickCheck.Gen as QC
 import qualified Test.QuickCheck.Random as QC
 import qualified System.Random as Random
@@ -113,6 +114,36 @@ var k =
 arbitrary :: (Arbitrary a, MonadGen m) => m a
 arbitrary = liftGen arbitrary
 
+getSize :: MonadGen m => m Int
+getSize = liftGen getSize
+
+scale :: MonadGen m => (Int -> Int) -> m a -> m a
+scale f g = sized (\n -> resize (f n) g)
+
+applyArbitrary2 :: MonadGen m => (Arbitrary a, Arbitrary b) => (a -> b -> r) -> m r
+applyArbitrary2 = liftGen . QC.applyArbitrary2
+
+applyArbitrary3 :: MonadGen m => (Arbitrary a, Arbitrary b, Arbitrary c) => (a -> b -> c -> r) -> m r
+applyArbitrary3 = liftGen . QC.applyArbitrary3
+
+applyArbitrary4 :: MonadGen m => (Arbitrary a, Arbitrary b, Arbitrary c, Arbitrary d) => (a -> b -> c -> d -> r) -> m r
+applyArbitrary4 = liftGen . QC.applyArbitrary4
+
+infiniteListOf :: MonadGen m => m a -> m [a]
+infiniteListOf = sequence . repeat
+
+infiniteList :: (Arbitrary a, MonadGen m) => m [a]
+infiniteList = infiniteListOf arbitrary
+
+shuffle :: MonadGen m => [a] -> m [a]
+shuffle = liftGen . QC.shuffle
+
+sublistOf :: MonadGen m => [a] -> m [a]
+sublistOf = liftGen . QC.sublistOf
+
+orderedList :: (Ord a, Arbitrary a, MonadGen m) => m [a]
+orderedList = liftGen QC.orderedList
+
 --------------------------------------------------------------------------
 -- ** Common generator combinators
 
@@ -123,6 +154,12 @@ gen `suchThat` p =
      case mx of
        Just x  -> return x
        Nothing -> sized (\n -> resize (n+1) (gen `suchThat` p))
+
+-- | Generates a value for which the given function returns a 'Just', and then
+-- applies the function.
+suchThatMap :: MonadGen m => m a -> (a -> Maybe b) -> m b
+gen `suchThatMap` f =
+  fmap fromJust $ fmap f gen `suchThat` isJust
 
 -- | Tries to generate a value that satisfies a predicate.
 suchThatMaybe :: MonadGen m => m a -> (a -> Bool) -> m (Maybe a)
@@ -149,6 +186,10 @@ listOf1 gen = sized $ \n ->
 -- | Generates a list of the given length.
 vectorOf :: MonadGen m => Int -> m a -> m [a]
 vectorOf k gen = sequence [ gen | _ <- [1..k] ]
+
+-- | Generates a list of a given length.
+vector :: (Arbitrary a, MonadGen m) => Int -> m [a]
+vector n = vectorOf n arbitrary
 
 
 -- * Partial functions
