@@ -32,6 +32,7 @@ module QuickCheck.GenT
   , sublistOf
   , orderedList
   -- * Re-exports
+  , Arbitrary(..)
   , QC.Gen
   -- * Safe functions
   , oneofMay
@@ -40,7 +41,7 @@ module QuickCheck.GenT
   ) where
 
 import QuickCheck.GenT.Prelude
-import Test.QuickCheck (Arbitrary)
+import Test.QuickCheck (Arbitrary(..))
 import qualified Test.QuickCheck.Arbitrary as QC
 import qualified Test.QuickCheck.Gen as QC
 import qualified Test.QuickCheck.Random as QC
