@@ -7,6 +7,7 @@
 module QuickCheck.GenT where
 
 import QuickCheck.GenT.Prelude
+import Test.QuickCheck (Arbitrary)
 import qualified Test.QuickCheck.Gen as QC
 import qualified Test.QuickCheck.Random as QC
 import qualified System.Random as Random
@@ -72,6 +73,9 @@ var :: Integral n => n -> QC.QCGen -> QC.QCGen
 var k = 
   (if k == k' then id else var k') . (if even k then fst else snd) . Random.split 
   where k' = k `div` 2 
+  
+arbitrary :: (Arbitrary a, MonadGen m) => m a
+arbitrary = liftGen arbitrary
  
 
 --------------------------------------------------------------------------
