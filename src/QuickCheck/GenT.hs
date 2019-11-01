@@ -9,7 +9,7 @@ module QuickCheck.GenT
   , runGenT
   , MonadGen(..)
   -- * Lifted functions
-  , arbitrary
+  , arbitrary'
   , oneof
   , frequency
   , elements
@@ -111,8 +111,8 @@ var k =
 --------------------------------------------------------------------------
 -- ** Lifted functions
 
-arbitrary :: (Arbitrary a, MonadGen m) => m a
-arbitrary = liftGen arbitrary
+arbitrary' :: (Arbitrary a, MonadGen m) => m a
+arbitrary' = liftGen arbitrary
 
 getSize :: MonadGen m => m Int
 getSize = liftGen getSize
@@ -133,7 +133,7 @@ infiniteListOf :: MonadGen m => m a -> m [a]
 infiniteListOf = sequence . repeat
 
 infiniteList :: (Arbitrary a, MonadGen m) => m [a]
-infiniteList = infiniteListOf arbitrary
+infiniteList = infiniteListOf arbitrary'
 
 shuffle :: MonadGen m => [a] -> m [a]
 shuffle = liftGen . QC.shuffle
@@ -189,7 +189,7 @@ vectorOf k gen = sequence [ gen | _ <- [1..k] ]
 
 -- | Generates a list of a given length.
 vector :: (Arbitrary a, MonadGen m) => Int -> m [a]
-vector n = vectorOf n arbitrary
+vector n = vectorOf n arbitrary'
 
 
 -- * Partial functions
