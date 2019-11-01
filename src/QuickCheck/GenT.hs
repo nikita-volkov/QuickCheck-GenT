@@ -4,7 +4,40 @@
 -- Most of the code is borrowed from 
 -- <http://haskell.1045720.n5.nabble.com/darcs-patch-GenT-monad-transformer-variant-of-Gen-QuickCheck-2-td3172136.html a mailing list discussion>.
 -- Therefor, credits go to Paul Johnson and Felix Martini.
-module QuickCheck.GenT where
+module QuickCheck.GenT
+  ( GenT
+  , runGenT
+  , MonadGen(..)
+  -- * Lifted functions
+  , arbitrary
+  , oneof
+  , frequency
+  , elements
+  , growingElements
+  -- TODO: getSize
+  -- TODO: scale
+  , suchThat
+  -- TODO: suchThatMap
+  , suchThatMaybe
+  -- TODO: applyArbitrary2
+  -- TODO: applyArbitrary3
+  -- TODO: applyArbitrary4
+  , listOf
+  , listOf1
+  , vectorOf
+  -- TODO: vector
+  -- TODO: infiniteListOf
+  -- TODO: infiniteList
+  -- TODO: shuffle
+  -- TODO: sublistOf
+  -- TODO: orderedList
+  -- * Re-exports
+  , QC.Gen
+  -- * Safe functions
+  , oneofMay
+  , elementsMay
+  , growingElementsMay
+  ) where
 
 import QuickCheck.GenT.Prelude
 import Test.QuickCheck (Arbitrary)
@@ -73,10 +106,12 @@ var :: Integral n => n -> QC.QCGen -> QC.QCGen
 var k = 
   (if k == k' then id else var k') . (if even k then fst else snd) . Random.split 
   where k' = k `div` 2 
-  
+
+--------------------------------------------------------------------------
+-- ** Lifted functions
+
 arbitrary :: (Arbitrary a, MonadGen m) => m a
 arbitrary = liftGen arbitrary
- 
 
 --------------------------------------------------------------------------
 -- ** Common generator combinators
