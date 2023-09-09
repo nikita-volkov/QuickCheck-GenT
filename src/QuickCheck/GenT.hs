@@ -1,7 +1,7 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE LambdaCase #-}
 -- |
--- Most of the code is borrowed from 
+-- Most of the code is borrowed from
 -- <http://haskell.1045720.n5.nabble.com/darcs-patch-GenT-monad-transformer-variant-of-Gen-QuickCheck-2-td3172136.html a mailing list discussion>.
 -- Therefor, credits go to Paul Johnson and Felix Martini.
 module QuickCheck.GenT
@@ -42,6 +42,7 @@ module QuickCheck.GenT
 
 import QuickCheck.GenT.Prelude
 import Test.QuickCheck (Arbitrary(..))
+import Control.Monad.Morph (MFunctor(..))
 import qualified Test.QuickCheck.Arbitrary as QC
 import qualified Test.QuickCheck.Gen as QC
 import qualified Test.QuickCheck.Random as QC
@@ -49,6 +50,9 @@ import qualified System.Random as Random
 
 
 newtype GenT m a = GenT { unGenT :: QC.QCGen -> Int -> m a }
+
+instance MFunctor GenT where
+    hoist f (GenT g) = GenT $ \r n -> f $ g r n
 
 instance (Functor m) => Functor (GenT m) where
   fmap f m = GenT $ \r n -> fmap f $ unGenT m r n
@@ -78,36 +82,36 @@ instance (MonadIO m) => MonadIO (GenT m) where
 runGenT :: GenT m a -> QC.Gen (m a)
 runGenT (GenT run) = QC.MkGen run
 
-class (Applicative g, Monad g) => MonadGen g where 
-  liftGen :: QC.Gen a -> g a 
-  variant :: Integral n => n -> g a -> g a 
-  sized :: (Int -> g a) -> g a 
-  resize :: Int -> g a -> g a 
-  choose :: Random.Random a => (a, a) -> g a 
+class (Applicative g, Monad g) => MonadGen g where
+  liftGen :: QC.Gen a -> g a
+  variant :: Integral n => n -> g a -> g a
+  sized :: (Int -> g a) -> g a
+  resize :: Int -> g a -> g a
+  choose :: Random.Random a => (a, a) -> g a
 
 instance (Applicative m, Monad m) => MonadGen (GenT m) where
   liftGen gen = GenT $ \r n -> return $ QC.unGen gen r n
   choose rng = GenT $ \r _ -> return $ fst $ Random.randomR rng r
-  variant k (GenT g) = GenT $ \r n -> g (var k r) n 
-  sized f = GenT $ \r n -> let GenT g = f n in g r n 
+  variant k (GenT g) = GenT $ \r n -> g (var k r) n
+  sized f = GenT $ \r n -> let GenT g = f n in g r n
   resize n (GenT g) = GenT $ \r _ -> g r n
 
-instance MonadGen QC.Gen where 
-  liftGen = id 
-  variant k (QC.MkGen g) = QC.MkGen $ \r n -> g (var k r) n 
-  sized f = QC.MkGen $ \r n -> let QC.MkGen g = f n in g r n 
-  resize n (QC.MkGen g) = QC.MkGen $ \r _ -> g r n 
-  choose range = QC.MkGen $ \r _ -> fst $ Random.randomR range r 
+instance MonadGen QC.Gen where
+  liftGen = id
+  variant k (QC.MkGen g) = QC.MkGen $ \r n -> g (var k r) n
+  sized f = QC.MkGen $ \r n -> let QC.MkGen g = f n in g r n
+  resize n (QC.MkGen g) = QC.MkGen $ \r _ -> g r n
+  choose range = QC.MkGen $ \r _ -> fst $ Random.randomR range r
 
 -- |
--- Private variant-generating function.  Converts an integer into a chain 
--- of (fst . split) and (snd . split) applications.  Every integer (including 
--- negative ones) will give rise to a different random number generator in 
--- log2 n steps. 
+-- Private variant-generating function.  Converts an integer into a chain
+-- of (fst . split) and (snd . split) applications.  Every integer (including
+-- negative ones) will give rise to a different random number generator in
+-- log2 n steps.
 var :: Integral n => n -> QC.QCGen -> QC.QCGen
-var k = 
-  (if k == k' then id else var k') . (if even k then fst else snd) . Random.split 
-  where k' = k `div` 2 
+var k =
+  (if k == k' then id else var k') . (if even k then fst else snd) . Random.split
+  where k' = k `div` 2
 
 --------------------------------------------------------------------------
 -- ** Lifted functions
@@ -199,7 +203,7 @@ vector n = vectorOf n arbitrary'
 -- | Randomly uses one of the given generators. The input list
 -- must be non-empty.
 oneof :: MonadGen m => [m a] -> m a
-oneof = 
+oneof =
   fmap (fromMaybe (error "QuickCheck.GenT.oneof used with empty list")) .
   oneofMay
 
@@ -218,8 +222,8 @@ frequency xs0 = choose (1, tot) >>= (`pick` xs0)
 
 -- | Generates one of the given values. The input list must be non-empty.
 elements :: MonadGen m => [a] -> m a
-elements = 
-  fmap (fromMaybe (error "QuickCheck.GenT.elements used with empty list")) . 
+elements =
+  fmap (fromMaybe (error "QuickCheck.GenT.elements used with empty list")) .
   elementsMay
 
 -- | Takes a list of elements of increasing size, and chooses
@@ -235,14 +239,14 @@ growingElements =
 -- * Total functions resulting in Maybe
 -------------------------
 
--- | 
+-- |
 -- Randomly uses one of the given generators.
 oneofMay :: MonadGen m => [m a] -> m (Maybe a)
 oneofMay = \case
   [] -> return Nothing
   l -> fmap Just $ choose (0, length l - 1) >>= (l !!)
 
--- | Generates one of the given values. 
+-- | Generates one of the given values.
 elementsMay :: MonadGen m => [a] -> m (Maybe a)
 elementsMay = \case
   [] -> return Nothing
