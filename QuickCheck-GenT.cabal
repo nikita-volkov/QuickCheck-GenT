@@ -10,9 +10,9 @@ license:
 license-file:
   LICENSE
 homepage:
-  https://github.com/nikita-volkov/QuickCheck-GenT 
+  https://github.com/nikita-volkov/QuickCheck-GenT
 bug-reports:
-  https://github.com/nikita-volkov/QuickCheck-GenT/issues 
+  https://github.com/nikita-volkov/QuickCheck-GenT/issues
 author:
   Nikita Volkov <nikita.y.volkov@mail.ru>
 maintainer:
@@ -45,7 +45,9 @@ library
     QuickCheck >= 2.7,
     random,
     mtl,
-    base >= 4.5 && < 5
+    base >= 4.5 && < 5, 
+    mmorph
+
   default-extensions:
     Arrows
     DeriveGeneric
