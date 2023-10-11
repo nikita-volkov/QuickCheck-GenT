@@ -1,55 +1,49 @@
-module QuickCheck.GenT.Prelude 
-  ( 
-    module Exports,
+module QuickCheck.GenT.Prelude
+  ( module Exports,
     traceM,
   )
-  where
+where
 
--- base
-import Prelude as Exports hiding (concat, foldr, mapM_, sequence_, foldl1, maximum, minimum, product, sum, all, and, any, concatMap, elem, foldl, foldr1, notElem, or, mapM, sequence, FilePath, id, (.))
-import Control.Monad as Exports hiding (mapM_, sequence_, forM_, msum, mapM, sequence, forM)
 import Control.Applicative as Exports
 import Control.Arrow as Exports hiding (left, right)
 import Control.Category as Exports
-import Data.Monoid as Exports
-import Data.Foldable as Exports
-import Data.Traversable as Exports hiding (for)
-import Data.Maybe as Exports
-import Data.List as Exports hiding (concat, foldr, foldl1, maximum, minimum, product, sum, all, and, any, concatMap, elem, foldl, foldr1, notElem, or, find, maximumBy, minimumBy, mapAccumL, mapAccumR, foldl')
-import Data.Tuple as Exports
-import Data.Ord as Exports (Down(..))
-import Data.String as Exports
-import Data.Int as Exports
-import Data.Word as Exports
-import Data.Ratio as Exports
-import Data.Fixed as Exports
-import Data.Ix as Exports
-import Data.Data as Exports
-import Text.Read as Exports (readMaybe, readEither)
-import Control.Exception as Exports hiding (tryJust)
 import Control.Concurrent as Exports hiding (yield)
-import System.Mem.StableName as Exports
-import System.Timeout as Exports
-import System.Exit as Exports
-import System.IO.Unsafe as Exports
-import System.IO as Exports (Handle, hClose)
-import System.IO.Error as Exports
-import Unsafe.Coerce as Exports
+import Control.Exception as Exports hiding (tryJust)
+import Control.Monad as Exports
+import Control.Monad.Identity as Exports
+import Control.Monad.Reader as Exports
+import Control.Monad.ST as Exports
+import Control.Monad.State as Exports
+import Control.Monad.Writer as Exports
+import Data.Data as Exports
+import Data.Fixed as Exports
+import Data.Foldable as Exports
+import Data.IORef as Exports
+import Data.Int as Exports
+import Data.Ix as Exports
+import Data.List as Exports hiding (all, and, any, concat, concatMap, elem, find, foldl, foldl', foldl1, foldr, foldr1, mapAccumL, mapAccumR, maximum, maximumBy, minimum, minimumBy, notElem, or, product, sum)
+import Data.Maybe as Exports
+import Data.Monoid as Exports
+import Data.Ord as Exports (Down (..))
+import Data.Ratio as Exports
+import Data.STRef as Exports
+import Data.String as Exports
+import Data.Traversable as Exports hiding (for)
+import Data.Tuple as Exports
+import Data.Word as Exports
+import Debug.Trace as Exports hiding (traceM)
 import GHC.Exts as Exports (groupWith, sortWith)
 import GHC.Generics as Exports (Generic)
 import GHC.IO.Exception as Exports
-import Debug.Trace as Exports hiding (traceM)
-import Data.IORef as Exports
-import Data.STRef as Exports
-import Control.Monad.ST as Exports
-
--- mtl
-import Control.Monad.Identity as Exports hiding (mapM_, sequence_, forM_, msum, mapM, sequence, forM)
-import Control.Monad.State as Exports hiding (mapM_, sequence_, forM_, msum, mapM, sequence, forM)
-import Control.Monad.Reader as Exports hiding (mapM_, sequence_, forM_, msum, mapM, sequence, forM)
-import Control.Monad.Writer as Exports hiding (mapM_, sequence_, forM_, msum, mapM, sequence, forM)
-import Control.Monad.Trans as Exports
-
+import System.Exit as Exports
+import System.IO as Exports (Handle, hClose)
+import System.IO.Error as Exports
+import System.IO.Unsafe as Exports
+import System.Mem.StableName as Exports
+import System.Timeout as Exports
+import Text.Read as Exports (readEither, readMaybe)
+import Unsafe.Coerce as Exports
+import Prelude as Exports hiding (FilePath, all, and, any, concat, concatMap, elem, foldl, foldl1, foldr, foldr1, id, mapM, mapM_, maximum, minimum, notElem, or, product, sequence, sequence_, sum, (.))
 
 traceM :: (Monad m) => String -> m ()
 traceM s = trace s $ return ()
