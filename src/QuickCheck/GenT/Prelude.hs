@@ -10,11 +10,10 @@ import Control.Category as Exports
 import Control.Concurrent as Exports hiding (yield)
 import Control.Exception as Exports hiding (tryJust)
 import Control.Monad as Exports
-import Control.Monad.Identity as Exports
-import Control.Monad.Reader as Exports
+import Control.Monad.IO.Class as Exports
+import Control.Monad.Morph as Exports (MFunctor (..))
 import Control.Monad.ST as Exports
-import Control.Monad.State as Exports
-import Control.Monad.Writer as Exports
+import Control.Monad.Trans.Class as Exports
 import Data.Data as Exports
 import Data.Fixed as Exports
 import Data.Foldable as Exports

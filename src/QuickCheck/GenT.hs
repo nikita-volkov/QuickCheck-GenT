@@ -44,7 +44,6 @@ module QuickCheck.GenT
   )
 where
 
-import Control.Monad.Morph (MFunctor (..))
 import QuickCheck.GenT.Prelude
 import qualified System.Random as Random
 import Test.QuickCheck (Arbitrary (..))
