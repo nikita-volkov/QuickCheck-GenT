@@ -120,7 +120,7 @@ arbitrary' :: (Arbitrary a, MonadGen m) => m a
 arbitrary' = liftGen arbitrary
 
 getSize :: (MonadGen m) => m Int
-getSize = liftGen getSize
+getSize = liftGen QC.getSize
 
 scale :: (MonadGen m) => (Int -> Int) -> m a -> m a
 scale f g = sized (\n -> resize (f n) g)
